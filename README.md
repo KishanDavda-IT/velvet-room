@@ -19,7 +19,7 @@ Velvet Room is a browser-based 3D cinema where friends can meet in a shared room
 - **Client:** JavaScript, Three.js, Vite, and Socket.IO
 - **Server:** Node.js, Express, and Socket.IO
 - **Media:** WebRTC for host-to-viewer screen and video streaming
-- **Room storage:** in-memory for local development; Redis for shared storage and Socket.IO broadcasting on Vercel
+- **Room storage:** in-memory for local development; Redis for shared storage and Socket.IO broadcasting in multi-instance deployments
 - **Movie catalog:** Internet Archive public-domain film metadata and MP4 streams
 
 ## Run locally
@@ -66,21 +66,10 @@ When sharing a browser tab with a movie, enable the browser's **Share tab audio*
 | 1–6 | Send an emoji reaction |
 | Escape | Close chat or show the interface |
 
-## Deploy to Vercel
-
-See [`VERCEL.md`](VERCEL.md) for the deployment walkthrough. In short:
-
-1. Import the repository into Vercel with the repository root as the project root.
-2. Add an Upstash Redis database and configure `REDIS_URL` with its **TLS Redis connection URL** (`rediss://...`). The REST URL and token do not provide the Redis Pub/Sub connection used by Socket.IO.
-3. For screen sharing on restrictive networks, configure Cloudflare TURN credentials as server-side environment variables.
-4. Deploy the project.
-
-Do not commit real credentials or secrets. Keep TURN secrets and Redis URLs in your local `.env` or your hosting provider's environment-variable settings.
-
 ## Contributing
 
 Bug reports and pull requests are welcome. For a useful bug report, include the steps to reproduce the issue, your browser, and any relevant error message. Please avoid including private room links, credentials, or other secrets.
 
 ## License
 
-This repository does not currently include a `LICENSE` file. It is publicly visible, but a license has not been specified for reuse or redistribution. Add a license file to make the project's reuse terms clear.
+Velvet Room is licensed under the MIT License. See [LICENSE](LICENSE) for the full text.
