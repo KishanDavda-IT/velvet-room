@@ -1,26 +1,58 @@
-# Velvet Room
+<div align="center">
 
-Velvet Room is a browser-based 3D cinema where friends can meet in a shared room, chat, and watch together. Create a room, share its invite link, and play a public-domain film, a local video, or a screen share on the cinema screen.
+# 🛋️ Velvet Room
 
-**Live demo:** [velvet-room312.vercel.app](https://velvet-room312.vercel.app)
+**A multiplayer 3D cinema where friends can meet, chat, and watch together.**
+
+Create a room, share an invite link, and join the movie from your browser.
+
+[Live demo](https://velvet-room312.vercel.app) · [Report a bug](https://github.com/KishanDavda-IT/velvet-room/issues/new) · [Request a feature](https://github.com/KishanDavda-IT/velvet-room/issues/new)
+
+[![MIT License](https://img.shields.io/github/license/KishanDavda-IT/velvet-room)](LICENSE) [![Deploy on Vercel](https://img.shields.io/badge/Deploy%20on-Vercel-black?logo=vercel)](https://vercel.com/)
+
+</div>
+
+---
 
 ## Features
 
-- Multiplayer 3D cinema with up to eight people per room
-- Move around with a third-person avatar, or switch to first-person view
-- Invite friends with a shareable room link
-- In-room text chat and emoji reactions
-- Host screen sharing with audio, or play a local video file
-- Browse and play public-domain films from the Internet Archive
-- Room lighting, fullscreen viewing, UI hide/show, drinks, and a seated companion
+- **Shared 3D room:** walk around with an avatar and meet up to seven other people.
+- **First- and third-person views:** choose how you want to explore the room.
+- **Room invites:** copy a link so friends can join from their browsers.
+- **Chat and reactions:** send messages and quick emoji reactions.
+- **Watch together:** the host can share a screen with audio, play a local video, or choose a public-domain film.
+- **Cinema controls:** adjust the room lights, sit, hide the interface, and use fullscreen viewing.
+- **Room extras:** enjoy drinks and a seated companion.
+- **No installation:** open the live demo or run the project locally in a browser.
+
+## Live demo
+
+Try Velvet Room at **[velvet-room312.vercel.app](https://velvet-room312.vercel.app)**. Open it in two browser windows to try the room with another guest.
 
 ## Tech stack
 
-- **Client:** JavaScript, Three.js, Vite, and Socket.IO
-- **Server:** Node.js, Express, and Socket.IO
-- **Media:** WebRTC for host-to-viewer screen and video streaming
-- **Room storage:** in-memory for local development; Redis for shared storage and Socket.IO broadcasting in multi-instance deployments
-- **Movie catalog:** Internet Archive public-domain film metadata and MP4 streams
+| Area | Technology |
+| --- | --- |
+| Client and 3D scene | JavaScript, Three.js, Vite |
+| Realtime room and chat | Node.js, Express, Socket.IO |
+| Shared room state | In-memory storage locally; Redis and the Socket.IO Redis adapter for multi-instance deployments |
+| Screen and video sharing | WebRTC with STUN; optional TURN relay |
+| Movie catalog | Public-domain films hosted by Internet Archive |
+| Hosting | Vercel or Docker |
+
+## Project structure
+
+```text
+velvet-room/
+├── api/             # Vercel API and Socket.IO routes
+├── client/          # Browser UI, 3D room, and media controls
+├── server/          # Realtime server and room logic
+├── .env.example     # Environment variable template
+├── Dockerfile       # Container build
+├── vercel.json      # Vercel build and routing settings
+├── package.json     # Workspace scripts
+└── LICENSE          # MIT License
+```
 
 ## Run locally
 
@@ -39,18 +71,39 @@ cp .env.example .env
 npm run dev
 ```
 
-Open [http://localhost:5173](http://localhost:5173). The Vite client runs on port 5173 and the development server runs on port 3001.
+On Windows PowerShell, use `Copy-Item .env.example .env` instead of `cp`.
 
-The local server uses in-memory room storage when `REDIS_URL` is unset. Rooms are temporary and will be lost when the server restarts. You can edit `.env` to change local settings; see [`.env.example`](.env.example) for the available options.
+Open [http://localhost:5173](http://localhost:5173). The Vite client runs on port `5173`; the realtime server runs on port `3001`.
 
-## Playing together
+Redis is optional for local development. Without `REDIS_URL`, rooms use in-memory state and are cleared when the server restarts. Set `REDIS_URL` when you want to test Redis-backed room state locally.
+
+### Environment variables
+
+Start with [`.env.example`](.env.example). The main settings are:
+
+| Variable | Purpose |
+| --- | --- |
+| `PORT` | Realtime server port; defaults to `3001`. |
+| `PUBLIC_ORIGIN` | Allowed client origin during local development; defaults to `http://localhost:5173`. |
+| `REDIS_URL` | Upstash Redis TLS connection URL. Optional locally; required on Vercel for shared room state and Socket.IO broadcasts. |
+| `STUN_URLS` | Comma-separated STUN servers used to establish WebRTC connections. |
+| `TURN_URL`, `TURN_USERNAME`, `TURN_CREDENTIAL` | Optional TURN relay credentials for networks that block direct WebRTC connections. |
+| `CLOUDFLARE_TURN_KEY_ID`, `CLOUDFLARE_TURN_KEY_SECRET` | Optional server-side credentials for Cloudflare Realtime TURN. Keep the secret private. |
+| `MAX_ROOM_SIZE` | Maximum room size, including the host; defaults to `8`. |
+| `ROOM_EMPTY_TTL_MS` | How long an empty room is retained; defaults to `60000` ms. |
+| `VIDEO_MAX_BITRATE` | Per-viewer screen-share video bitrate cap; defaults to `4000000` bits/sec. |
+| `LOG_LEVEL` | Server log level; defaults to `info`. |
+
+Do not commit real credentials or put server secrets in client-side `VITE_` variables.
+
+## Play together
 
 1. Open the app and create a room.
 2. Use **Invite** to copy the room link and send it to friends.
-3. Move with **WASD** or the arrow keys. Drag to look around.
-4. The host can start a screen share, choose a local video, or open the built-in movie library.
+3. Move with **WASD** or the arrow keys; drag to look around.
+4. The host can share a screen, select a local video, or open the movie library.
 
-When sharing a browser tab with a movie, enable the browser's **Share tab audio** option so guests can hear it. Screen sharing is peer-to-peer WebRTC; network restrictions may require a TURN relay.
+When sharing a browser tab, enable the browser's **Share tab audio** option so guests can hear it.
 
 ### Keyboard controls
 
@@ -66,10 +119,60 @@ When sharing a browser tab with a movie, enable the browser's **Share tab audio*
 | 1–6 | Send an emoji reaction |
 | Escape | Close chat or show the interface |
 
+## Deploy
+
+### Vercel
+
+The repository includes a `vercel.json` configuration. Import the repository with its root as the project root; it uses `npm run build` and serves the client from `client/dist`.
+
+Add `REDIS_URL` as a server-side environment variable. Use the Upstash Redis **TLS/TCP connection URL** (`rediss://...`); REST credentials alone do not provide the Redis Pub/Sub connection used by Socket.IO. Optional Cloudflare TURN credentials can improve connectivity on restrictive networks.
+
+Vercel Functions have a configured maximum duration of 300 seconds. If a connection reaches that limit, clients reconnect; the host may need to restart an active screen share.
+
+### Docker
+
+```bash
+docker build -t velvet-room .
+docker run --rm -p 3001:3001 --env-file .env velvet-room
+```
+
+The container exposes port `3001`. Set `REDIS_URL` when you need room state shared across instances.
+
+## How it works
+
+```text
+Browser A ── Socket.IO ── Realtime server ── Redis (when configured)
+    │                           │
+    └──────── WebRTC media ─────┴──────── Browser B
+                    STUN / optional TURN
+```
+
+Room membership and chat use Socket.IO. Redis stores shared room state and broadcasts events when configured. Screen and video streams use WebRTC between participants, with TURN available as a relay when direct connections are blocked.
+
+## Known limitations
+
+- Screen-share quality depends on the host's upload connection and each viewer's network.
+- Some networks block direct WebRTC connections; configure TURN for those cases.
+- On Vercel, a function reconnect can interrupt a screen-share session.
+- Public-domain movie playback depends on the availability of the external movie host.
+
 ## Contributing
 
-Bug reports and pull requests are welcome. For a useful bug report, include the steps to reproduce the issue, your browser, and any relevant error message. Please avoid including private room links, credentials, or other secrets.
+Bug reports and pull requests are welcome. For a bug report, include the steps to reproduce it, your browser, and any relevant error message. Do not include private room links, credentials, or other secrets.
+
+1. Fork the repository.
+2. Create a branch: `git checkout -b feature/your-feature`.
+3. Commit your changes: `git commit -m "Add your feature"`.
+4. Push the branch and open a pull request.
 
 ## License
 
-Velvet Room is licensed under the MIT License. See [LICENSE](LICENSE) for the full text.
+Velvet Room is licensed under the MIT License. See [`LICENSE`](LICENSE) for the full text.
+
+## Maintainer
+
+[Kishan Davda](https://github.com/KishanDavda-IT)
+
+---
+
+If you enjoy the project, consider giving it a ⭐.
