@@ -132,7 +132,11 @@ async function enterRoom({ roomId, name, hostKey }) {
   seatsBuilder.setInteractive(true);
 
   const socket = net.connect();
-  const joinRes = await net.emit('room:join', { roomId, name, hostKey });
+  let joinRes = await net.emit('room:join', { roomId, name, hostKey });
+  if (!joinRes?.ok && ['INTERNAL', 'NETWORK'].includes(joinRes?.code)) {
+    await new Promise((resolve) => setTimeout(resolve, 500));
+    joinRes = await net.emit('room:join', { roomId, name, hostKey });
+  }
 
   if (!joinRes || !joinRes.ok) {
     const code = joinRes?.code || 'INTERNAL';
@@ -158,7 +162,26 @@ async function enterRoom({ roomId, name, hostKey }) {
       });
       return joinRes;
     }
+
+    const retryRoomInfo = await getRoomInfo(roomId).catch(() => ({ count: 0, max: 8 }));
+    activeOverlay = renderJoinGate({
+      container: appEl,
+      roomInfo: retryRoomInfo,
+      initialError: joinRes?.error || 'Could not connect to the room. Please try again.',
+      onJoin(retryName) {
+        return enterRoom({ roomId, name: retryName, hostKey });
+      },
+    });
     return joinRes;
+  }
+
+  if (joinRes.state?.isHost && hostKey) {
+    try {
+      sessionStorage.setItem(`velvet:hostKey:${roomId}`, hostKey);
+    } catch {
+      // Ignore
+    }
+    window.history.replaceState({}, '', `/r/${roomId}?host=1`);
   }
 
   // Load initial state into store
@@ -289,6 +312,11 @@ async function enterRoom({ roomId, name, hostKey }) {
     initialVolume: currentVolume,
     initialLightsEnabled: sceneCtx.areRoomLightsEnabled(),
     initialFirstPerson: cameraRig.isFirstPerson(),
+    initialStreamActive: store.streaming.active,
+    initialScreenFocused: screenBuilder.isScreenFocused(),
+    initialSpatialAudioEnabled: viewerReceiver?.spatialAudioEnabled || false,
+    initialSpatialAudioMotion: viewerReceiver?.spatialAudioMotion ?? 0.72,
+    isHost: store.isHost,
     onToggleLights() {
       return sceneCtx.toggleRoomLights();
     },
@@ -303,6 +331,17 @@ async function enterRoom({ roomId, name, hostKey }) {
       } else {
         document.exitFullscreen?.().catch(() => {});
       }
+    },
+    onToggleScreenFocus(focused) {
+      const active = screenBuilder.setScreenFocused(focused);
+      if (focused && !active) showToast('The movie is still connecting.');
+      return active;
+    },
+    onSetSpatialAudioEnabled(enabled) {
+      return viewerReceiver?.setSpatialAudioEnabled(enabled) ?? false;
+    },
+    onSetSpatialAudioMotion(motion) {
+      viewerReceiver?.setSpatialAudioMotion(motion);
     },
     onSendReaction(emoji) {
       net.emit('reaction:send', { emoji });
@@ -604,6 +643,10 @@ async function enterRoom({ roomId, name, hostKey }) {
         chat.blurInput();
         return;
       }
+      if (hud.isScreenFocused()) {
+        hud.setScreenFocus(false);
+        return;
+      }
       if (hud.isTheaterMode()) {
         hud.setTheaterMode(false);
         return;
@@ -725,8 +768,17 @@ async function handleRoute(route) {
 
     let savedHostKey = null;
     let savedName = null;
+    const hostKeyStorageKey = `velvet:hostKey:${roomId}`;
+    const isHostTab = new URLSearchParams(window.location.search).get('host') === '1';
     try {
-      savedHostKey = localStorage.getItem(`velvet:hostKey:${roomId}`);
+      // Host identity is restored only from the explicit host route, never from a shared invite link.
+      if (isHostTab) {
+        savedHostKey = sessionStorage.getItem(hostKeyStorageKey) || localStorage.getItem(hostKeyStorageKey);
+        if (savedHostKey) {
+          sessionStorage.setItem(hostKeyStorageKey, savedHostKey);
+          localStorage.removeItem(hostKeyStorageKey);
+        }
+      }
       savedName = localStorage.getItem('velvet:name');
     } catch {
       // Ignore
