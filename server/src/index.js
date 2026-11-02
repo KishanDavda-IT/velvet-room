@@ -337,15 +337,20 @@ export function createServer() {
   const app = createApp();
   const httpServer = http.createServer(app);
 
-  const ioOptions =
-    CONFIG.NODE_ENV === 'production'
-      ? { path: process.env.VERCEL ? '/api/socket.io' : '/socket.io' }
-      : {
+  // Vercel's runtime does not always expose NODE_ENV as "production". The
+  // transport path must still match the public /api route or every room join
+  // will time out after the REST room-creation request succeeds.
+  const ioOptions = {
+    path: process.env.VERCEL ? '/api/socket.io' : '/socket.io',
+    ...(CONFIG.NODE_ENV !== 'production'
+      ? {
           cors: {
             origin: CONFIG.PUBLIC_ORIGIN,
             methods: ['GET', 'POST'],
           },
-        };
+        }
+      : {}),
+  };
 
   const io = new SocketIOServer(httpServer, ioOptions);
   const redisAdapterReady = configureRedisAdapter(io);
