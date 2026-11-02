@@ -14,6 +14,7 @@ export function renderHud({
   onToggleScreenFocus = () => false,
   onSetSpatialAudioEnabled = () => false,
   onSetSpatialAudioMotion = () => {},
+  onVirtualMove = () => {},
   initialLightsEnabled = true,
   initialFirstPerson = false,
   initialVolume = 0.8,
@@ -318,6 +319,63 @@ export function renderHud({
   movementHint.className = 'glass hud-movement-hint hud-interactive';
   movementHint.textContent = 'WASD / arrows to move · drag to look';
 
+  // A compact touch controller keeps the room usable on phones without taking
+  // keyboard movement away from desktop players.
+  const mobileControls = document.createElement('div');
+  mobileControls.className = 'hud-mobile-controls hud-interactive';
+  mobileControls.setAttribute('aria-label', 'Touch movement control');
+  const joystick = document.createElement('div');
+  joystick.className = 'hud-joystick';
+  joystick.setAttribute('role', 'application');
+  joystick.setAttribute('aria-label', 'Move your avatar');
+  const joystickKnob = document.createElement('div');
+  joystickKnob.className = 'hud-joystick-knob';
+  joystick.appendChild(joystickKnob);
+  mobileControls.appendChild(joystick);
+
+  let joystickPointerId = null;
+  const joystickRadius = 42;
+  function updateJoystick(clientX, clientY) {
+    const rect = joystick.getBoundingClientRect();
+    const dx = clientX - (rect.left + rect.width / 2);
+    const dy = clientY - (rect.top + rect.height / 2);
+    const distance = Math.hypot(dx, dy);
+    const scale = distance > joystickRadius ? joystickRadius / distance : 1;
+    const x = dx * scale;
+    const y = dy * scale;
+    joystickKnob.style.transform = `translate(${x}px, ${y}px)`;
+    onVirtualMove(-y / joystickRadius, x / joystickRadius);
+  }
+  function resetJoystick() {
+    if (joystickPointerId === null) return;
+    joystickPointerId = null;
+    joystickKnob.style.transform = 'translate(0, 0)';
+    onVirtualMove(0, 0);
+  }
+  joystick.addEventListener('pointerdown', (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    joystickPointerId = event.pointerId;
+    joystick.setPointerCapture?.(event.pointerId);
+    updateJoystick(event.clientX, event.clientY);
+  });
+  joystick.addEventListener('pointermove', (event) => {
+    if (event.pointerId !== joystickPointerId) return;
+    event.preventDefault();
+    event.stopPropagation();
+    updateJoystick(event.clientX, event.clientY);
+  });
+  joystick.addEventListener('pointerup', (event) => {
+    if (event.pointerId === joystickPointerId) resetJoystick();
+  });
+  joystick.addEventListener('pointercancel', resetJoystick);
+  joystick.addEventListener('lostpointercapture', resetJoystick);
+  window.addEventListener('blur', resetJoystick);
+  function onDocumentVisibilityChange() {
+    if (document.hidden) resetJoystick();
+  }
+  document.addEventListener('visibilitychange', onDocumentVisibilityChange);
+
   EMOJIS.forEach((emoji, index) => {
     const btn = document.createElement('button');
     btn.type = 'button';
@@ -385,7 +443,7 @@ export function renderHud({
   muteBtn.addEventListener('click', toggleMute);
 
   volumeBar.append(muteBtn, volumeSlider);
-  hudRoot.append(topBar, statusWrap, quickControls, movementHint, reactionsBar, volumeBar, inviteBackdrop);
+  hudRoot.append(topBar, statusWrap, quickControls, movementHint, mobileControls, reactionsBar, volumeBar, inviteBackdrop);
   container.appendChild(hudRoot);
 
   const visibilityToggle = document.createElement('button');
@@ -451,6 +509,9 @@ export function renderHud({
       offPeers();
       offStatus();
       offStreaming();
+      resetJoystick();
+      window.removeEventListener('blur', resetJoystick);
+      document.removeEventListener('visibilitychange', onDocumentVisibilityChange);
       document.removeEventListener('fullscreenchange', updateFullscreenButton);
       document.removeEventListener('keydown', onInviteKeydown);
       hudRoot.remove();

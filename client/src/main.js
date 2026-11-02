@@ -133,9 +133,15 @@ async function enterRoom({ roomId, name, hostKey }) {
 
   const socket = net.connect();
   let joinRes = await net.emit('room:join', { roomId, name, hostKey });
-  if (!joinRes?.ok && ['INTERNAL', 'NETWORK'].includes(joinRes?.code)) {
-    await new Promise((resolve) => setTimeout(resolve, 500));
-    joinRes = await net.emit('room:join', { roomId, name, hostKey });
+  if (!joinRes?.ok && ['INTERNAL', 'NETWORK', 'ROOM_NOT_FOUND'].includes(joinRes?.code)) {
+    // A freshly created room can briefly race the websocket connection (and a
+    // serverless deployment may route the first request to another instance).
+    // Retry the join before showing a permanent room-not-found screen.
+    for (const delay of [350, 750, 1400]) {
+      await new Promise((resolve) => setTimeout(resolve, delay));
+      joinRes = await net.emit('room:join', { roomId, name, hostKey });
+      if (joinRes?.ok || !['INTERNAL', 'NETWORK', 'ROOM_NOT_FOUND'].includes(joinRes?.code)) break;
+    }
   }
 
   if (!joinRes || !joinRes.ok) {
@@ -342,6 +348,9 @@ async function enterRoom({ roomId, name, hostKey }) {
     },
     onSetSpatialAudioMotion(motion) {
       viewerReceiver?.setSpatialAudioMotion(motion);
+    },
+    onVirtualMove(forward, strafe) {
+      playerController?.setVirtualInput(forward, strafe);
     },
     onSendReaction(emoji) {
       net.emit('reaction:send', { emoji });
@@ -752,6 +761,16 @@ async function handleRoute(route) {
     let roomInfo;
     try {
       roomInfo = await getRoomInfo(roomId);
+      if (!roomInfo.exists) {
+        // Room creation and the first invite visit can land on different
+        // serverless instances for a moment. Give the room store a chance to
+        // become visible before declaring the link invalid.
+        for (const delay of [300, 700, 1200]) {
+          await new Promise((resolve) => setTimeout(resolve, delay));
+          roomInfo = await getRoomInfo(roomId).catch(() => roomInfo);
+          if (roomInfo.exists) break;
+        }
+      }
     } catch {
       roomInfo = { exists: false };
     }

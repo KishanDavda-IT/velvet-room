@@ -9,6 +9,10 @@ function smoothAngle(from, to, maxStep) {
   return from + Math.max(-maxStep, Math.min(maxStep, delta));
 }
 
+function clamp(value, min, max) {
+  return Math.min(Math.max(value, min), max);
+}
+
 const MOVE_SPEED = 2.8;
 const SEND_INTERVAL_MS = 60;
 
@@ -17,6 +21,7 @@ export function createPlayerController({ getPosition, getViewYaw, onMove }) {
   let lastSendAt = 0;
   let wasMoving = false;
   let facing = 0;
+  let virtualInput = { forward: 0, strafe: 0 };
 
   function isTyping() {
     const active = document.activeElement;
@@ -42,25 +47,32 @@ export function createPlayerController({ getPosition, getViewYaw, onMove }) {
 
   function onKeyUp(event) {
     keys.delete(event.key.toLowerCase());
-    if (keys.size === 0) stopMovement();
+    if (keys.size === 0 && virtualInput.forward === 0 && virtualInput.strafe === 0) {
+      stopMovement();
+    }
   }
 
   function clearKeys() {
     stopMovement();
   }
 
+  function clearAllInput() {
+    virtualInput = { forward: 0, strafe: 0 };
+    clearKeys();
+  }
+
   function onVisibilityChange() {
-    if (document.hidden) clearKeys();
+    if (document.hidden) clearAllInput();
   }
 
   function onFocusIn() {
-    if (isTyping()) clearKeys();
+    if (isTyping()) clearAllInput();
   }
 
   window.addEventListener('keydown', onKeyDown);
   window.addEventListener('keyup', onKeyUp, true);
-  window.addEventListener('blur', clearKeys);
-  window.addEventListener('pointercancel', clearKeys);
+  window.addEventListener('blur', clearAllInput);
+  window.addEventListener('pointercancel', clearAllInput);
   document.addEventListener('visibilitychange', onVisibilityChange);
   document.addEventListener('focusin', onFocusIn);
 
@@ -69,8 +81,16 @@ export function createPlayerController({ getPosition, getViewYaw, onMove }) {
     const current = getPosition();
     if (!current) return;
 
-    const forward = Number(keys.has('w') || keys.has('arrowup')) - Number(keys.has('s') || keys.has('arrowdown'));
-    const strafe = Number(keys.has('d') || keys.has('arrowright')) - Number(keys.has('a') || keys.has('arrowleft'));
+    const forward = clamp(
+      Number(keys.has('w') || keys.has('arrowup')) - Number(keys.has('s') || keys.has('arrowdown')) + virtualInput.forward,
+      -1,
+      1
+    );
+    const strafe = clamp(
+      Number(keys.has('d') || keys.has('arrowright')) - Number(keys.has('a') || keys.has('arrowleft')) + virtualInput.strafe,
+      -1,
+      1
+    );
     const length = Math.hypot(forward, strafe);
     const moving = length > 0;
     let next = { ...current, moving };
@@ -106,14 +126,23 @@ export function createPlayerController({ getPosition, getViewYaw, onMove }) {
     resetFacing(yaw = 0) {
       facing = Number.isFinite(yaw) ? yaw : 0;
     },
+    setVirtualInput(forward = 0, strafe = 0) {
+      virtualInput = {
+        forward: clamp(Number(forward) || 0, -1, 1),
+        strafe: clamp(Number(strafe) || 0, -1, 1),
+      };
+      if (virtualInput.forward === 0 && virtualInput.strafe === 0 && keys.size === 0) {
+        stopMovement();
+      }
+    },
     dispose() {
       window.removeEventListener('keydown', onKeyDown);
       window.removeEventListener('keyup', onKeyUp, true);
-      window.removeEventListener('blur', clearKeys);
-      window.removeEventListener('pointercancel', clearKeys);
+      window.removeEventListener('blur', clearAllInput);
+      window.removeEventListener('pointercancel', clearAllInput);
       document.removeEventListener('visibilitychange', onVisibilityChange);
       document.removeEventListener('focusin', onFocusIn);
-      clearKeys();
+      clearAllInput();
     },
   };
 }

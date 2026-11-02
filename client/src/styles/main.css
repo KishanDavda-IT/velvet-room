@@ -1,10 +1,10 @@
 :root {
-  --bg:        #0a0610;
-  --surface:   #160f1f;
-  --surface-2: #211830;
-  --accent:    #d4a24c;   /* gold */
+  --bg:        #08050d;
+  --surface:   #17101f;
+  --surface-2: #24182e;
+  --accent:    #d8ad62;   /* gold */
   --accent-ink:#1a1206;   /* text on gold */
-  --velvet:    #8c1c2c;   /* seats + curtains */
+  --velvet:    #7c2033;   /* seats + curtains */
   --text:      #f4ecdc;
   --muted:     #8b8296;
   --danger:    #e5484d;
@@ -206,6 +206,9 @@ video.cinema-screen-focused {
   justify-content: center;
   padding: 24px;
   overflow-y: auto;
+  background:
+    radial-gradient(circle at 50% 4%, rgba(125, 44, 63, 0.2), transparent 34%),
+    linear-gradient(180deg, rgba(8, 5, 13, 0.22), rgba(8, 5, 13, 0.86));
 }
 
 .landing-container {
@@ -216,7 +219,8 @@ video.cinema-screen-focused {
   flex-direction: column;
   align-items: center;
   text-align: center;
-  gap: 24px;
+  gap: 20px;
+  padding: 48px 0 28px;
 }
 
 .landing-glow {
@@ -236,16 +240,43 @@ video.cinema-screen-focused {
   font-family: var(--font-display);
   font-style: italic;
   font-weight: 700;
-  font-size: clamp(48px, 8vw, 96px);
+  font-size: clamp(56px, 9vw, 108px);
   line-height: 1.05;
   color: var(--accent);
   text-shadow: 0 8px 32px rgba(212, 162, 76, 0.25);
+  letter-spacing: -0.04em;
+}
+
+.landing-title em {
+  color: var(--text);
+  font-weight: 400;
+}
+
+.landing-kicker {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--accent);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.25em;
+}
+
+.landing-kicker span {
+  width: 34px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--accent));
+}
+
+.landing-kicker span:last-child {
+  background: linear-gradient(90deg, var(--accent), transparent);
 }
 
 .landing-subtitle {
   margin: -8px 0 8px;
   max-width: 520px;
-  font-size: 17px;
+  font-size: 16px;
+  line-height: 1.7;
   color: var(--text);
   opacity: 0.9;
 }
@@ -253,17 +284,48 @@ video.cinema-screen-focused {
 .landing-cards {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
-  gap: 20px;
+  gap: 16px;
   width: 100%;
   max-width: 720px;
 }
 
 .landing-card {
+  position: relative;
   padding: 24px;
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 10px;
   text-align: left;
+  box-shadow: 0 22px 70px rgba(0, 0, 0, 0.22), inset 0 1px rgba(255, 255, 255, 0.05);
+  transition: border-color 160ms ease, transform 160ms ease, background 160ms ease;
+}
+
+.landing-card:hover {
+  border-color: rgba(216, 173, 98, 0.32);
+  background: rgba(30, 20, 42, 0.84);
+  transform: translateY(-3px);
+}
+
+.landing-card-icon {
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(216, 173, 98, 0.42);
+  border-radius: 50%;
+  color: var(--accent);
+  font-size: 17px;
+}
+
+.landing-card-icon-muted {
+  color: var(--text);
+  border-color: rgba(244, 236, 220, 0.2);
+}
+
+.landing-card-copy {
+  margin: -3px 0 4px;
+  color: var(--muted);
+  font-size: 13px;
 }
 
 .landing-card-label {
@@ -290,6 +352,20 @@ video.cinema-screen-focused {
   margin-top: 8px;
   font-size: 12px;
   color: var(--muted);
+}
+
+.landing-footer span {
+  color: var(--ok);
+  font-size: 9px;
+}
+
+.landing-footer i {
+  display: inline-block;
+  width: 3px;
+  height: 3px;
+  margin: 0 8px 2px;
+  border-radius: 50%;
+  background: rgba(244, 236, 220, 0.3);
 }
 
 /* Join Gate & Status Gate */
@@ -592,6 +668,10 @@ video.cinema-screen-focused {
   font-size: 11px;
   letter-spacing: 0.02em;
   pointer-events: none;
+}
+
+.hud-mobile-controls {
+  display: none;
 }
 
 /* Reactions Bar (bottom-left) */
@@ -1067,6 +1147,13 @@ body.chat-is-collapsed .hud-volume {
   transition: opacity 250ms ease, transform 250ms ease;
 }
 
+button:focus-visible,
+input:focus-visible,
+select:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
 /* Tap to play overlay */
 .tap-to-play-overlay {
   position: fixed;
@@ -1085,6 +1172,121 @@ body.chat-is-collapsed .hud-volume {
 }
 
 @media (max-width: 767px) {
+  html,
+  body {
+    font-size: 14px;
+  }
+
+  .screen-overlay {
+    align-items: stretch;
+    padding: max(16px, env(safe-area-inset-top)) 12px max(18px, env(safe-area-inset-bottom));
+  }
+
+  .landing-container {
+    justify-content: center;
+    padding: 28px 0 12px;
+  }
+
+  .landing-title {
+    font-size: clamp(50px, 16vw, 76px);
+  }
+
+  .landing-kicker {
+    font-size: 8px;
+    letter-spacing: 0.18em;
+  }
+
+  .landing-subtitle {
+    max-width: 330px;
+    font-size: 14px;
+  }
+
+  .landing-cards {
+    grid-template-columns: 1fr;
+    max-width: 430px;
+  }
+
+  .landing-card {
+    padding: 18px;
+  }
+
+  .landing-footer {
+    line-height: 1.8;
+  }
+
+  .hud-topbar {
+    top: max(8px, env(safe-area-inset-top));
+    left: 8px;
+    right: 8px;
+  }
+
+  .hud-logo {
+    padding: 5px 9px;
+    font-size: 17px;
+  }
+
+  .hud-invite-btn {
+    min-height: 34px;
+    padding: 0 12px;
+  }
+
+  .hud-status-wrap {
+    top: 58px;
+  }
+
+  .hud-mobile-controls {
+    position: fixed;
+    left: max(14px, env(safe-area-inset-left));
+    bottom: calc(82px + env(safe-area-inset-bottom));
+    z-index: 23;
+    display: block;
+    width: 116px;
+    height: 116px;
+    pointer-events: auto;
+  }
+
+  .hud-joystick {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    border: 1px solid rgba(244, 236, 220, 0.16);
+    border-radius: 50%;
+    background: radial-gradient(circle at 34% 27%, rgba(255, 255, 255, 0.12), rgba(22, 15, 31, 0.72));
+    box-shadow: 0 12px 36px rgba(0, 0, 0, 0.28), inset 0 0 0 9px rgba(244, 236, 220, 0.035);
+    touch-action: none;
+  }
+
+  .hud-joystick::after {
+    content: '';
+    position: absolute;
+    inset: 25px;
+    border: 1px dashed rgba(216, 173, 98, 0.3);
+    border-radius: 50%;
+  }
+
+  .hud-joystick-knob {
+    position: relative;
+    z-index: 1;
+    width: 42px;
+    height: 42px;
+    border: 1px solid rgba(216, 173, 98, 0.8);
+    border-radius: 50%;
+    background: linear-gradient(145deg, #e7bd70, #9b672e);
+    box-shadow: 0 5px 14px rgba(0, 0, 0, 0.34);
+    pointer-events: none;
+    transition: transform 70ms ease-out;
+  }
+
+  .hud-movement-hint {
+    left: 132px;
+    top: auto;
+    bottom: calc(96px + env(safe-area-inset-bottom));
+    max-width: calc(100vw - 148px);
+    padding: 5px 8px;
+    font-size: 9px;
+  }
+
   .hud-visibility-toggle {
     top: 106px;
     left: 8px;
@@ -1115,7 +1317,7 @@ body.chat-is-collapsed .hud-volume {
     top: auto;
     left: 8px;
     right: 8px;
-    bottom: 8px;
+    bottom: max(8px, env(safe-area-inset-bottom));
     width: auto;
     height: 40vh;
   }
@@ -1124,13 +1326,28 @@ body.chat-is-collapsed .hud-volume {
   }
   .hud-volume {
     right: 16px;
-    bottom: 64px;
+    bottom: calc(64px + env(safe-area-inset-bottom));
   }
   .hud-reactions {
-    bottom: 64px;
+    bottom: calc(64px + env(safe-area-inset-bottom));
+    max-width: calc(100vw - 154px);
+    overflow-x: auto;
   }
   .hud-host-controls {
-    bottom: 120px;
+    bottom: calc(120px + env(safe-area-inset-bottom));
+    width: calc(100vw - 24px);
+    padding: 8px;
+  }
+
+  .host-row-1 {
+    width: 100%;
+  }
+
+  .host-row-1 button {
+    flex: 1 1 calc(50% - 8px);
+    min-width: 0;
+    padding: 0 9px;
+    font-size: 12px;
   }
   .movie-picker-backdrop {
     align-items: flex-end;

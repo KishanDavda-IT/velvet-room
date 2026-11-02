@@ -36,6 +36,7 @@ export const CHAT_HISTORY = 50;
 export const CHAT_RATE = Object.freeze({ count: 5, windowMs: 5000 });
 export const REACTION_COOLDOWN_MS = 300;
 export const HOST_RESYNC_COOLDOWN_MS = 5000;
+export const HOST_RECOVERY_GRACE_MS = 15000;
 export const EMOJIS = Object.freeze(['👍', '😂', '😮', '❤️', '👏', '😢']);
 export const PALETTE = Object.freeze([
   '#e8a33d',

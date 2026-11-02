@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { SEATS } from '../constants.js';
 
 function truncateName(name, maxLen = 12) {
@@ -147,12 +148,22 @@ export function buildAvatars(scene) {
       return part;
     }
 
+    function rounded(width, height, depth, radius = 0.08) {
+      return new RoundedBoxGeometry(
+        width,
+        height,
+        depth,
+        Math.min(radius, width * 0.24, height * 0.24, depth * 0.24),
+        3
+      );
+    }
+
     const pose = new THREE.Group();
     group.add(pose);
 
     // Classic blocky R6 proportions with layered hair, facial features and clothing details.
-    mesh(new THREE.BoxGeometry(0.82, 0.84, 0.42), shirtMat, pose, 0, 1.2, 0);
-    mesh(new THREE.BoxGeometry(0.62, 0.62, 0.62), skinMat, pose, 0, 1.94, 0);
+    mesh(rounded(0.82, 0.84, 0.42, 0.12), shirtMat, pose, 0, 1.2, 0);
+    mesh(new THREE.SphereGeometry(0.35, 16, 12), skinMat, pose, 0, 1.94, 0);
     mesh(new THREE.BoxGeometry(0.11, 0.15, 0.08), skinMat, pose, -0.35, 1.92, 0);
     mesh(new THREE.BoxGeometry(0.11, 0.15, 0.08), skinMat, pose, 0.35, 1.92, 0);
 
@@ -161,23 +172,23 @@ export function buildAvatars(scene) {
     mesh(new THREE.BoxGeometry(0.12, 0.32, 0.56), hairMat, pose, -0.29, 2.12, 0.025);
     mesh(new THREE.BoxGeometry(0.12, 0.32, 0.56), hairMat, pose, 0.29, 2.12, 0.025);
     if (hairStyle === 0) {
-      mesh(new THREE.BoxGeometry(0.66, 0.16, 0.18), hairMat, pose, 0, 2.2, -0.27);
-      mesh(new THREE.BoxGeometry(0.28, 0.14, 0.18), hairMat, pose, -0.19, 2.12, -0.29);
+      mesh(new THREE.BoxGeometry(0.66, 0.16, 0.18), hairMat, pose, 0, 2.2, -0.35);
+      mesh(new THREE.BoxGeometry(0.28, 0.14, 0.18), hairMat, pose, -0.19, 2.12, -0.35);
     } else if (hairStyle === 1) {
-      mesh(new THREE.BoxGeometry(0.68, 0.1, 0.18), hairMat, pose, 0, 2.17, -0.28);
+      mesh(new THREE.BoxGeometry(0.68, 0.1, 0.18), hairMat, pose, 0, 2.17, -0.35);
       mesh(new THREE.BoxGeometry(0.32, 0.12, 0.15), detailMat, pose, 0, 2.3, -0.17);
     } else {
-      mesh(new THREE.BoxGeometry(0.62, 0.14, 0.2), hairMat, pose, 0, 2.16, -0.27);
-      mesh(new THREE.BoxGeometry(0.76, 0.07, 0.28), hairMat, pose, 0, 2.23, -0.34);
+      mesh(new THREE.BoxGeometry(0.62, 0.14, 0.2), hairMat, pose, 0, 2.16, -0.35);
+      mesh(new THREE.BoxGeometry(0.76, 0.07, 0.28), hairMat, pose, 0, 2.23, -0.37);
     }
 
-    mesh(new THREE.BoxGeometry(0.105, 0.12, 0.025), eyeWhiteMat, pose, -0.135, 1.99, -0.319);
-    mesh(new THREE.BoxGeometry(0.105, 0.12, 0.025), eyeWhiteMat, pose, 0.135, 1.99, -0.319);
-    mesh(new THREE.BoxGeometry(0.046, 0.07, 0.018), faceMat, pose, -0.125, 1.99, -0.338);
-    mesh(new THREE.BoxGeometry(0.046, 0.07, 0.018), faceMat, pose, 0.145, 1.99, -0.338);
-    mesh(new THREE.BoxGeometry(0.14, 0.025, 0.022), hairMat, pose, -0.135, 2.1, -0.323);
-    mesh(new THREE.BoxGeometry(0.14, 0.025, 0.022), hairMat, pose, 0.135, 2.1, -0.323);
-    mesh(new THREE.BoxGeometry(0.16, 0.025, 0.02), faceMat, pose, 0, 1.82, -0.323);
+    mesh(new THREE.BoxGeometry(0.105, 0.12, 0.025), eyeWhiteMat, pose, -0.135, 1.99, -0.35);
+    mesh(new THREE.BoxGeometry(0.105, 0.12, 0.025), eyeWhiteMat, pose, 0.135, 1.99, -0.35);
+    mesh(new THREE.BoxGeometry(0.046, 0.07, 0.018), faceMat, pose, -0.125, 1.99, -0.37);
+    mesh(new THREE.BoxGeometry(0.046, 0.07, 0.018), faceMat, pose, 0.145, 1.99, -0.37);
+    mesh(new THREE.BoxGeometry(0.14, 0.025, 0.022), hairMat, pose, -0.135, 2.1, -0.355);
+    mesh(new THREE.BoxGeometry(0.14, 0.025, 0.022), hairMat, pose, 0.135, 2.1, -0.355);
+    mesh(new THREE.BoxGeometry(0.16, 0.025, 0.02), faceMat, pose, 0, 1.82, -0.36);
 
     // Collar, button placket and a small jacket badge make each blocky shirt read clearly.
     const leftCollar = mesh(new THREE.BoxGeometry(0.22, 0.11, 0.035), eyeWhiteMat, pose, -0.12, 1.58, -0.232);
@@ -194,18 +205,18 @@ export function buildAvatars(scene) {
     const leftArm = new THREE.Group();
     leftArm.position.set(-0.49, 1.56, 0);
     pose.add(leftArm);
-    mesh(new THREE.BoxGeometry(0.32, 0.48, 0.35), shirtMat, leftArm, 0, -0.24, 0);
+     mesh(rounded(0.32, 0.48, 0.35, 0.08), shirtMat, leftArm, 0, -0.24, 0);
     mesh(new THREE.BoxGeometry(0.32, 0.07, 0.35), detailMat, leftArm, 0, -0.5, 0);
-    mesh(new THREE.BoxGeometry(0.3, 0.24, 0.33), skinMat, leftArm, 0, -0.65, 0);
-    mesh(new THREE.BoxGeometry(0.3, 0.17, 0.33), skinMat, leftArm, 0, -0.84, 0);
+    mesh(rounded(0.3, 0.24, 0.33, 0.07), skinMat, leftArm, 0, -0.65, 0);
+    mesh(rounded(0.3, 0.17, 0.33, 0.05), skinMat, leftArm, 0, -0.84, 0);
 
     const rightArm = new THREE.Group();
     rightArm.position.set(0.49, 1.56, 0);
     pose.add(rightArm);
-    mesh(new THREE.BoxGeometry(0.32, 0.48, 0.35), shirtMat, rightArm, 0, -0.24, 0);
+    mesh(rounded(0.32, 0.48, 0.35, 0.08), shirtMat, rightArm, 0, -0.24, 0);
     mesh(new THREE.BoxGeometry(0.32, 0.07, 0.35), detailMat, rightArm, 0, -0.5, 0);
-    mesh(new THREE.BoxGeometry(0.3, 0.24, 0.33), skinMat, rightArm, 0, -0.65, 0);
-    mesh(new THREE.BoxGeometry(0.3, 0.17, 0.33), skinMat, rightArm, 0, -0.84, 0);
+    mesh(rounded(0.3, 0.24, 0.33, 0.07), skinMat, rightArm, 0, -0.65, 0);
+    mesh(rounded(0.3, 0.17, 0.33, 0.05), skinMat, rightArm, 0, -0.84, 0);
 
     const cupGroup = new THREE.Group();
     cupGroup.position.set(0, -0.86, -0.04);
@@ -228,19 +239,19 @@ export function buildAvatars(scene) {
     const leftLeg = new THREE.Group();
     leftLeg.position.set(-0.22, 0.8, 0);
     pose.add(leftLeg);
-    mesh(new THREE.BoxGeometry(0.36, 0.58, 0.4), pantsMat, leftLeg, 0, -0.3, 0);
+    mesh(rounded(0.36, 0.58, 0.4, 0.08), pantsMat, leftLeg, 0, -0.3, 0);
     mesh(new THREE.BoxGeometry(0.36, 0.14, 0.4), detailMat, leftLeg, 0, -0.61, 0);
     mesh(new THREE.BoxGeometry(0.09, 0.28, 0.025), detailMat, leftLeg, -0.13, -0.32, -0.214);
-    mesh(new THREE.BoxGeometry(0.39, 0.18, 0.54), shoeMat, leftLeg, 0, -0.68, -0.06);
+    mesh(rounded(0.39, 0.18, 0.54, 0.06), shoeMat, leftLeg, 0, -0.68, -0.06);
     mesh(new THREE.BoxGeometry(0.4, 0.04, 0.55), soleMat, leftLeg, 0, -0.77, -0.06);
 
     const rightLeg = new THREE.Group();
     rightLeg.position.set(0.22, 0.8, 0);
     pose.add(rightLeg);
-    mesh(new THREE.BoxGeometry(0.36, 0.58, 0.4), pantsMat, rightLeg, 0, -0.3, 0);
+    mesh(rounded(0.36, 0.58, 0.4, 0.08), pantsMat, rightLeg, 0, -0.3, 0);
     mesh(new THREE.BoxGeometry(0.36, 0.14, 0.4), detailMat, rightLeg, 0, -0.61, 0);
     mesh(new THREE.BoxGeometry(0.09, 0.28, 0.025), detailMat, rightLeg, 0.13, -0.32, -0.214);
-    mesh(new THREE.BoxGeometry(0.39, 0.18, 0.54), shoeMat, rightLeg, 0, -0.68, -0.06);
+    mesh(rounded(0.39, 0.18, 0.54, 0.06), shoeMat, rightLeg, 0, -0.68, -0.06);
     mesh(new THREE.BoxGeometry(0.4, 0.04, 0.55), soleMat, rightLeg, 0, -0.77, -0.06);
 
     mesh(new THREE.BoxGeometry(0.28, 0.08, 0.05), detailMat, pose, 0, 0.79, -0.23);

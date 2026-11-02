@@ -57,8 +57,18 @@ export const net = {
       return;
     }
     return new Promise((resolve) => {
-      s.emit(event, payload, (response) => {
+      let settled = false;
+      const finish = (response) => {
+        if (settled) return;
+        settled = true;
         resolve(response || { ok: false, code: 'INTERNAL', error: 'No response' });
+      };
+      const timer = setTimeout(() => {
+        finish({ ok: false, code: 'NETWORK', error: 'The room connection timed out.' });
+      }, 10000);
+      s.emit(event, payload, (response) => {
+        clearTimeout(timer);
+        finish(response);
       });
     });
   },

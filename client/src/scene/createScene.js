@@ -1,14 +1,18 @@
 import * as THREE from 'three';
 
 export function createScene(container = document.getElementById('app')) {
+  const isMobile = typeof window !== 'undefined' && window.matchMedia?.('(max-width: 767px)').matches;
   const renderer = new THREE.WebGLRenderer({
     antialias: true,
     powerPreference: 'high-performance',
   });
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, isMobile ? 1.5 : 2));
   renderer.setSize(window.innerWidth, window.innerHeight);
   renderer.outputColorSpace = THREE.SRGBColorSpace;
-  renderer.shadowMap.enabled = false;
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 1.12;
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   renderer.setClearColor(0x0a0610);
 
   const canvas = renderer.domElement;
@@ -29,8 +33,20 @@ export function createScene(container = document.getElementById('app')) {
   const ambientLight = new THREE.AmbientLight(0x81708f, 0.68);
   scene.add(ambientLight);
 
+  const bounceLight = new THREE.HemisphereLight(0x54406d, 0x120a16, 0.52);
+  scene.add(bounceLight);
+
   const ceilingFill = new THREE.DirectionalLight(0xffe5c2, 1.25);
   ceilingFill.position.set(-2, 9, 3);
+  ceilingFill.castShadow = true;
+  ceilingFill.shadow.mapSize.set(isMobile ? 512 : 1024, isMobile ? 512 : 1024);
+  ceilingFill.shadow.camera.left = -10;
+  ceilingFill.shadow.camera.right = 10;
+  ceilingFill.shadow.camera.top = 10;
+  ceilingFill.shadow.camera.bottom = -10;
+  ceilingFill.shadow.camera.near = 1;
+  ceilingFill.shadow.camera.far = 24;
+  ceilingFill.shadow.bias = -0.0005;
   scene.add(ceilingFill);
 
   const screenLight = new THREE.PointLight(0x9fb4ff, 6, 22, 2);
@@ -62,13 +78,14 @@ export function createScene(container = document.getElementById('app')) {
     return light;
   });
 
-  const roomLights = [ambientLight, ceilingFill, ...sconceLights, ...ceilingLights];
+  const roomLights = [ambientLight, bounceLight, ceilingFill, ...sconceLights, ...ceilingLights];
   let roomLightsEnabled = true;
 
   function setRoomLightsEnabled(enabled) {
     roomLightsEnabled = Boolean(enabled);
     // Keep a low cinematic fill in the room so the chairs and players remain visible.
     ambientLight.intensity = roomLightsEnabled ? 0.68 : 0.34;
+    bounceLight.intensity = roomLightsEnabled ? 0.52 : 0.24;
     ceilingFill.intensity = roomLightsEnabled ? 1.25 : 0.08;
     sconceLights.forEach((light) => { light.intensity = roomLightsEnabled ? 5.5 : 0.55; });
     ceilingLights.forEach((light) => { light.intensity = roomLightsEnabled ? 3.2 : 0.18; });

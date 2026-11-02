@@ -50,8 +50,14 @@ function deserializeRoom(serialized) {
 function startEmptyTimer(room) {
   if (room.emptyTimer) clearTimeout(room.emptyTimer);
   room.emptyTimer = setTimeout(() => {
-    rooms.delete(room.id);
-    logger.info({ roomId: room.id }, 'Room deleted after empty TTL');
+    // Creation starts the empty-room timer before the host has joined. A room
+    // must only expire if it is still empty when the timer fires.
+    const current = rooms.get(room.id);
+    if (current === room && room.members.size === 0) {
+      rooms.delete(room.id);
+      logger.info({ roomId: room.id }, 'Room deleted after empty TTL');
+    }
+    room.emptyTimer = null;
   }, CONFIG.ROOM_EMPTY_TTL_MS);
   if (typeof room.emptyTimer.unref === 'function') room.emptyTimer.unref();
 }
@@ -219,6 +225,13 @@ export function addMember(room, socketId, rawName, hostKey) {
     : null;
   const isReplacingHost = isHost && existingHostId !== null;
   const alreadyMember = room.members.has(socketId);
+  if (alreadyMember) {
+    if (room.emptyTimer) {
+      clearTimeout(room.emptyTimer);
+      room.emptyTimer = null;
+    }
+    return { member: room.members.get(socketId), replacedHostSocketId: null, alreadyMember: true };
+  }
   if (!isReplacingHost && !alreadyMember && room.members.size >= CONFIG.MAX_ROOM_SIZE) {
     throw new AppError(ERROR_CODES.ROOM_FULL, 'This room is full.');
   }
@@ -249,6 +262,10 @@ export function addMember(room, socketId, rawName, hostKey) {
     position: preferredPosition || getSeatPosition(seat),
   };
   room.members.set(socketId, member);
+  if (room.emptyTimer) {
+    clearTimeout(room.emptyTimer);
+    room.emptyTimer = null;
+  }
   if (isHost) room.hostSocketId = socketId;
   return { member, replacedHostSocketId };
 }
@@ -260,7 +277,6 @@ export function removeMember(room, socketId) {
   const wasHost = room.hostSocketId === socketId || member.isHost;
   if (wasHost) {
     room.hostSocketId = null;
-    room.streaming = { active: false, kind: null };
   }
   if (room.members.size === 0 && !redis) startEmptyTimer(room);
   return { member, wasHost };

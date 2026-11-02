@@ -109,7 +109,9 @@ export function createCameraRig({ camera, canvas }) {
 
   function onPointerDown(e) {
     if (orbitMode) return;
+    if (e.button !== undefined && e.button !== 0) return;
     activePointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    canvas.setPointerCapture?.(e.pointerId);
     if (activePointers.size === 1) {
       lastDragPos = { x: e.clientX, y: e.clientY };
       lastPinchDist = null;
@@ -145,6 +147,9 @@ export function createCameraRig({ camera, canvas }) {
 
   function onPointerUpOrCancel(e) {
     activePointers.delete(e.pointerId);
+    if (canvas.hasPointerCapture?.(e.pointerId)) {
+      canvas.releasePointerCapture?.(e.pointerId);
+    }
     if (activePointers.size === 1) {
       const remaining = Array.from(activePointers.values())[0];
       lastDragPos = { x: remaining.x, y: remaining.y };
@@ -169,6 +174,15 @@ export function createCameraRig({ camera, canvas }) {
   window.addEventListener('pointerup', onPointerUpOrCancel);
   window.addEventListener('pointercancel', onPointerUpOrCancel);
   canvas.addEventListener('wheel', onWheel, { passive: false });
+
+  function resetPointerState() {
+    activePointers.clear();
+    lastDragPos = null;
+    lastPinchDist = null;
+  }
+
+  window.addEventListener('blur', resetPointerState);
+  document.addEventListener('visibilitychange', resetPointerState);
 
   const orbitTarget = new THREE.Vector3(0, 3, -4);
 
@@ -246,6 +260,9 @@ export function createCameraRig({ camera, canvas }) {
       window.removeEventListener('pointerup', onPointerUpOrCancel);
       window.removeEventListener('pointercancel', onPointerUpOrCancel);
       canvas.removeEventListener('wheel', onWheel);
+      window.removeEventListener('blur', resetPointerState);
+      document.removeEventListener('visibilitychange', resetPointerState);
+      resetPointerState();
     },
   };
 }

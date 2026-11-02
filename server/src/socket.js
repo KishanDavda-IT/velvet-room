@@ -2,6 +2,7 @@ import {
   CHAT_RATE,
   REACTION_COOLDOWN_MS,
   HOST_RESYNC_COOLDOWN_MS,
+  HOST_RECOVERY_GRACE_MS,
 } from './config.js';
 import { AppError, ERROR_CODES, formatAckError } from './errors.js';
 import { logger } from './logger.js';
@@ -93,8 +94,10 @@ export function registerSocketHandlers(io) {
 
         const updated = await updateRoom(roomId, (room) => {
           const joinResult = addMember(room, socket.id, name, hostKey);
-          const joinMessage = createChatMessage({ kind: 'system', text: `${joinResult.member.name} joined` });
-          pushChat(room, joinMessage);
+          const joinMessage = joinResult.alreadyMember
+            ? null
+            : createChatMessage({ kind: 'system', text: `${joinResult.member.name} joined` });
+          if (joinMessage) pushChat(room, joinMessage);
           return { ...joinResult, joinMessage };
         });
         if (!updated) throw new AppError(ERROR_CODES.ROOM_NOT_FOUND, 'Room not found');
@@ -116,9 +119,11 @@ export function registerSocketHandlers(io) {
         socket.data.hostSocketId = room.hostSocketId;
         socket.data.replaced = false;
 
-        socket.to(room.id).emit('peer:joined', { peer: member });
-        if (member.isHost) socket.to(room.id).emit('host:returned', { id: socket.id });
-        socket.to(room.id).emit('chat:message', joinMessage);
+        if (!result.alreadyMember) {
+          socket.to(room.id).emit('peer:joined', { peer: member });
+          if (member.isHost) socket.to(room.id).emit('host:returned', { id: socket.id });
+          if (joinMessage) socket.to(room.id).emit('chat:message', joinMessage);
+        }
 
         logger.info(
           { roomId: room.id, name: member.name, memberCount: room.members.size, isHost: member.isHost },
@@ -300,7 +305,27 @@ export function registerSocketHandlers(io) {
         socket.to(roomId).emit('peer:left', { id: socket.id });
         if (wasHost) {
           socket.to(roomId).emit('host:left', {});
-          io.to(roomId).emit('stream:stopped', {});
+          // Keep the stream state during the short socket reconnect window.
+          // This prevents viewers from falling back to "waiting" while the
+          // host's media and signaling connection are recovering.
+          if (updated.room.streaming.active) {
+            setTimeout(async () => {
+              try {
+                const current = await getRoom(roomId);
+                if (!current || current.hostSocketId || !current.streaming.active) return;
+                const stopped = await updateRoom(roomId, (room) => {
+                  if (room.hostSocketId || !room.streaming.active) return false;
+                  room.streaming = { active: false, kind: null };
+                  return true;
+                });
+                if (stopped?.result) io.to(roomId).emit('stream:stopped', {});
+              } catch (err) {
+                logger.warn({ err, roomId }, 'Could not finalize interrupted host stream');
+              }
+            }, HOST_RECOVERY_GRACE_MS);
+          } else {
+            io.to(roomId).emit('stream:stopped', {});
+          }
         }
         socket.to(roomId).emit('chat:message', message);
       } catch (err) {

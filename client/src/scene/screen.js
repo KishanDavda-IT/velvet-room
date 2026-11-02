@@ -17,10 +17,15 @@ export function buildScreen({ scene, screenLight }) {
   const material = new THREE.MeshBasicMaterial({
     map: idleTexture,
     toneMapped: false,
+    depthWrite: false,
   });
 
   const mesh = new THREE.Mesh(geometry, material);
   mesh.position.set(...SCREEN.CENTER);
+  // The screen is always the emissive focal plane; keeping it in a stable
+  // render order prevents frame/video depth updates from flashing between
+  // adjacent surfaces.
+  mesh.renderOrder = 3;
   scene.add(mesh);
 
   let currentStatus = STATUS_TEXT.WAITING;
@@ -33,8 +38,21 @@ export function buildScreen({ scene, screenLight }) {
     const w = idleCanvas.width;
     const h = idleCanvas.height;
 
-    idleCtx.fillStyle = '#0a0610';
+    const background = idleCtx.createLinearGradient(0, 0, 0, h);
+    background.addColorStop(0, '#17101f');
+    background.addColorStop(0.55, '#0c0812');
+    background.addColorStop(1, '#050308');
+    idleCtx.fillStyle = background;
     idleCtx.fillRect(0, 0, w, h);
+
+    idleCtx.fillStyle = 'rgba(212, 162, 76, 0.12)';
+    idleCtx.fillRect(0, 0, w, 8);
+    idleCtx.fillStyle = 'rgba(140, 28, 44, 0.32)';
+    idleCtx.fillRect(0, h - 11, w, 11);
+
+    idleCtx.strokeStyle = 'rgba(212, 162, 76, 0.5)';
+    idleCtx.lineWidth = 3;
+    idleCtx.strokeRect(42, 42, w - 84, h - 84);
 
     // Radial vignette (center transparent -> edges rgba(0,0,0,.6))
     const grad = idleCtx.createRadialGradient(w / 2, h / 2, h * 0.15, w / 2, h / 2, w * 0.65);
@@ -49,6 +67,12 @@ export function buildScreen({ scene, screenLight }) {
     idleCtx.fillStyle = '#d4a24c';
     idleCtx.font = 'italic 700 96px "Playfair Display", Georgia, serif';
     idleCtx.fillText('Velvet Room', w / 2, 300);
+
+    idleCtx.fillStyle = '#d4a24c';
+    idleCtx.font = '600 18px "Inter", system-ui, sans-serif';
+    idleCtx.letterSpacing = '6px';
+    idleCtx.fillText('PRIVATE SCREENING CLUB', w / 2, 230);
+    idleCtx.letterSpacing = '0px';
 
     // Current status string in 500 32px Inter color #8b8296 at y=380
     idleCtx.fillStyle = '#8b8296';

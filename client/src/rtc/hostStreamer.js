@@ -11,6 +11,7 @@ export class HostStreamer {
     this.pcs = new Map();
     this.pendingIce = new Map();
     this.retryCounts = new Map();
+    this.connectionTokens = new Map();
     this._stream = null;
     this._hostVideo = null;
     this._objectUrl = null;
@@ -301,6 +302,8 @@ export class HostStreamer {
 
   async connectToViewer(peerId) {
     if (!this._stream || !peerId || peerId === store.selfId) return;
+    const token = (this.connectionTokens.get(peerId) || 0) + 1;
+    this.connectionTokens.set(peerId, token);
 
     if (this.pcs.has(peerId)) {
       try {
@@ -313,7 +316,7 @@ export class HostStreamer {
     this.pendingIce.set(peerId, []);
 
     const { iceServers } = await getIceConfig();
-    if (!this._stream) return;
+    if (!this._stream || this.connectionTokens.get(peerId) !== token) return;
 
     const pc = new RTCPeerConnection({ iceServers });
     this.pcs.set(peerId, pc);
@@ -346,8 +349,16 @@ export class HostStreamer {
     };
 
     const offer = await pc.createOffer();
+    if (!this._stream || this.connectionTokens.get(peerId) !== token || this.pcs.get(peerId) !== pc) {
+      pc.close();
+      return;
+    }
     offer.sdp = enhanceOpusSdp(offer.sdp);
     await pc.setLocalDescription(offer);
+    if (!this._stream || this.connectionTokens.get(peerId) !== token || this.pcs.get(peerId) !== pc) {
+      pc.close();
+      return;
+    }
 
     net.emit('rtc:offer', {
       to: peerId,
@@ -363,6 +374,7 @@ export class HostStreamer {
   }
 
   onViewerLeft(peerId) {
+    this.connectionTokens.delete(peerId);
     this.retryCounts.delete(peerId);
     this.pendingIce.delete(peerId);
     const pc = this.pcs.get(peerId);
@@ -450,6 +462,7 @@ export class HostStreamer {
     this.pcs.clear();
     this.pendingIce.clear();
     this.retryCounts.clear();
+    this.connectionTokens.clear();
   }
 
   _cleanupLocalMedia() {

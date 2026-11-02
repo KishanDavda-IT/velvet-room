@@ -24,12 +24,15 @@ export function renderLanding({ container, onEnterRoomAsHost, onNavigateToRoom }
   overlay.innerHTML = `
     <div class="landing-container">
       <div class="landing-glow"></div>
-      <h1 class="landing-title">Velvet Room</h1>
-      <p class="landing-subtitle">Your own private cinema. Share a link, grab a seat, press play together.</p>
+      <div class="landing-kicker"><span></span> PRIVATE SCREENING CLUB <span></span></div>
+      <h1 class="landing-title">Velvet <em>Room</em></h1>
+      <p class="landing-subtitle">A private cinema for the people you want beside you. Share a room, settle in, and press play together.</p>
 
       <div class="landing-cards">
         <div class="glass landing-card">
+          <div class="landing-card-icon" aria-hidden="true">✦</div>
           <div class="landing-card-label">Host a screening</div>
+          <p class="landing-card-copy">Your room, your programme, your front row.</p>
           <input
             type="text"
             class="text-input"
@@ -43,7 +46,9 @@ export function renderLanding({ container, onEnterRoomAsHost, onNavigateToRoom }
         </div>
 
         <div class="glass landing-card">
+          <div class="landing-card-icon landing-card-icon-muted" aria-hidden="true">↗</div>
           <div class="landing-card-label">Have an invite?</div>
+          <p class="landing-card-copy">Enter a room code or paste the link from your host.</p>
           <input
             type="text"
             class="text-input"
@@ -56,7 +61,7 @@ export function renderLanding({ container, onEnterRoomAsHost, onNavigateToRoom }
         </div>
       </div>
 
-      <footer class="landing-footer">Up to 8 people per room · Nothing is recorded</footer>
+      <footer class="landing-footer"><span>●</span> Up to 8 guests <i></i> Nothing is recorded <i></i> Best with headphones</footer>
     </div>
   `;
 

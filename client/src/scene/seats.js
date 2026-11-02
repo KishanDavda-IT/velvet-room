@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { SEATS } from '../constants.js';
 
 const COLOR_DEFAULT = 0x8c1c2c;
@@ -14,7 +15,7 @@ export function buildSeats({ scene, camera, canvas, isSeatOccupied, onSelectSeat
   const allSeatMaterials = new Set();
 
   function makeBox(width, height, depth) {
-    const geometry = new THREE.BoxGeometry(width, height, depth);
+    const geometry = new RoundedBoxGeometry(width, height, depth, Math.min(0.08, width * 0.18, height * 0.18, depth * 0.18), 3);
     sharedGeometries.push(geometry);
     return geometry;
   }

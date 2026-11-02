@@ -18,6 +18,7 @@ export function buildRoom(scene, { camera = null, canvas = null, onDrink = () =>
   });
   const floor = new THREE.Mesh(floorGeo, floorMat);
   floor.position.set(0, -0.05, 0);
+  floor.receiveShadow = true;
   group.add(floor);
 
   // A colored runner and patterned riser carpet break up the dark floor.
@@ -49,7 +50,51 @@ export function buildRoom(scene, { camera = null, canvas = null, onDrink = () =>
   });
   const shell = new THREE.Mesh(shellGeo, shellMat);
   shell.position.set(0, 3.5, 0);
+  shell.receiveShadow = true;
   group.add(shell);
+
+  // Very subtle floating dust catches the projector glow and gives the room a
+  // lived-in, physical atmosphere without adding another texture or asset.
+  const dustPositions = [];
+  const dustPhases = [];
+  for (let i = 0; i < 42; i += 1) {
+    dustPositions.push(
+      (Math.random() - 0.5) * 13,
+      1.25 + Math.random() * 4.6,
+      -8.4 + Math.random() * 14
+    );
+    dustPhases.push(Math.random() * Math.PI * 2);
+  }
+  const dustGeometry = new THREE.BufferGeometry();
+  dustGeometry.setAttribute('position', new THREE.Float32BufferAttribute(dustPositions, 3));
+  const dustMaterial = new THREE.PointsMaterial({
+    color: 0xf1c77c,
+    size: 0.045,
+    transparent: true,
+    opacity: 0.24,
+    depthWrite: false,
+    sizeAttenuation: true,
+  });
+  const dust = new THREE.Points(dustGeometry, dustMaterial);
+  dust.renderOrder = 2;
+  group.add(dust);
+
+  // Dark acoustic wall panels and ceiling moulding sell the proportions of a
+  // real screening room without adding heavy external assets.
+  const wallPanelMat = new THREE.MeshStandardMaterial({ color: 0x241426, roughness: 0.86 });
+  const trimMat = new THREE.MeshStandardMaterial({ color: 0x6c452d, roughness: 0.5, metalness: 0.16 });
+  for (const side of [-1, 1]) {
+    for (const z of [-7.7, -4.9, -2.1, 0.7, 3.5, 6.3]) {
+      const panel = new THREE.Mesh(new THREE.BoxGeometry(0.16, 3.7, 1.85), wallPanelMat);
+      panel.position.set(side * 7.88, 2.85, z);
+      panel.rotation.y = side < 0 ? -0.08 : 0.08;
+      panel.receiveShadow = true;
+      group.add(panel);
+    }
+  }
+  const ceilingTrim = new THREE.Mesh(new THREE.BoxGeometry(15.7, 0.16, 0.22), trimMat);
+  ceilingTrim.position.set(0, 6.72, -9.45);
+  group.add(ceilingTrim);
 
   // Riser: BoxGeometry(12, 0.5, 3.4) at (0, 0.25, 3)
   const riserGeo = new THREE.BoxGeometry(12, 0.5, 3.4);
@@ -68,8 +113,24 @@ export function buildRoom(scene, { camera = null, canvas = null, onDrink = () =>
     roughness: 0.8,
   });
   const frame = new THREE.Mesh(frameGeo, frameMat);
-  frame.position.set(0, 3.6, -9.95);
+  // Keep the frame behind the screen plane to avoid z-fighting while the
+  // canvas/video texture is changing frames.
+  frame.position.set(0, 3.6, -10.2);
+  frame.castShadow = true;
   group.add(frame);
+
+  const screenTrimMat = new THREE.MeshStandardMaterial({ color: 0x9f6b35, roughness: 0.38, metalness: 0.3 });
+  const screenTrimParts = [
+    [10.15, 0.12, 0.28, 0, 6.38, -10.08],
+    [10.15, 0.12, 0.28, 0, 0.82, -10.08],
+    [0.12, 5.68, 0.28, -5.02, 3.6, -10.08],
+    [0.12, 5.68, 0.28, 5.02, 3.6, -10.08],
+  ];
+  for (const [w, h, d, x, y, z] of screenTrimParts) {
+    const trim = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), screenTrimMat);
+    trim.position.set(x, y, z);
+    group.add(trim);
+  }
 
   // Curtains: two BoxGeometry(2.4, 6.4, 0.3) velvet (0x8c1c2c, roughness 0.9) at x = ±6.2, y = 3.4, z = -9.7
   const curtainMat = new THREE.MeshStandardMaterial({
@@ -85,6 +146,24 @@ export function buildRoom(scene, { camera = null, canvas = null, onDrink = () =>
   const rightCurtain = new THREE.Mesh(curtainGeo, curtainMat);
   rightCurtain.position.set(6.2, 3.4, -9.7);
   group.add(rightCurtain);
+
+  // Repeating folds catch the warm room light and make the velvet drapery read
+  // as fabric instead of two flat blocks.
+  const foldMat = new THREE.MeshStandardMaterial({ color: 0x5f1422, roughness: 0.96 });
+  const curtainDetails = [];
+  for (const side of [-1, 1]) {
+    for (let i = 0; i < 6; i += 1) {
+      const fold = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.12, 6.05, 10), foldMat);
+      fold.position.set(side * (5.35 + i * 0.34), 3.35, -9.91);
+      curtainDetails.push({ mesh: fold, side, offset: -0.85 + i * 0.34 });
+      group.add(fold);
+    }
+    const tieback = new THREE.Mesh(new THREE.TorusGeometry(0.28, 0.055, 8, 20), screenTrimMat);
+    tieback.position.set(side * 5.38, 2.25, -10.02);
+    tieback.rotation.x = Math.PI / 2;
+    curtainDetails.push({ mesh: tieback, side, offset: -0.82 });
+    group.add(tieback);
+  }
 
   // Valance: BoxGeometry(16, 0.7, 0.4) at (0, 6.6, -9.6)
   const valanceGeo = new THREE.BoxGeometry(16, 0.7, 0.4);
@@ -104,7 +183,17 @@ export function buildRoom(scene, { camera = null, canvas = null, onDrink = () =>
   for (const [x, y, z] of sconceCoords) {
     const sconce = new THREE.Mesh(sconceGeo, sconceMat);
     sconce.position.set(x, y, z);
+    sconce.castShadow = true;
     group.add(sconce);
+  }
+
+  const aisleLightMat = new THREE.MeshBasicMaterial({ color: 0xffc66d });
+  for (const z of [-7.4, -5.8, -4.2, -2.6, -1, 0.6, 2.2, 3.8, 5.4]) {
+    for (const x of [-5.8, 5.8]) {
+      const marker = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.055, 0.025, 12), aisleLightMat);
+      marker.position.set(x, 0.04 + (z >= 1.25 ? 0.5 : 0), z);
+      group.add(marker);
+    }
   }
 
   // Wall-mounted speaker cabinets, aimed into the screening room.
@@ -240,6 +329,10 @@ export function buildRoom(scene, { camera = null, canvas = null, onDrink = () =>
     rightCurtain.scale.x = scaleX;
     leftCurtain.position.x = -absPosX;
     rightCurtain.position.x = absPosX;
+    curtainDetails.forEach(({ mesh, side, offset }) => {
+      mesh.position.x = side * absPosX + side * offset;
+      mesh.visible = scaleX > 0.22;
+    });
   }
 
   function setCurtainsOpen(isOpen) {
@@ -262,7 +355,18 @@ export function buildRoom(scene, { camera = null, canvas = null, onDrink = () =>
     tweenActive = true;
   }
 
-  function update(_dt, now) {
+  function update(dt, now) {
+    const positions = dustGeometry.attributes.position;
+    for (let i = 0; i < dustPhases.length; i += 1) {
+      const index = i * 3;
+      positions.array[index] += Math.sin(now * 0.00022 + dustPhases[i]) * dt * 0.018;
+      positions.array[index + 1] += Math.sin(now * 0.00034 + dustPhases[i]) * dt * 0.012;
+      if (positions.array[index] > 6.7) positions.array[index] = -6.7;
+      if (positions.array[index] < -6.7) positions.array[index] = 6.7;
+      if (positions.array[index + 1] > 5.95) positions.array[index + 1] = 1.15;
+      if (positions.array[index + 1] < 1.15) positions.array[index + 1] = 5.95;
+    }
+    positions.needsUpdate = true;
     if (!tweenActive) return;
     const elapsed = now - tweenStart;
     const t = Math.min(Math.max(elapsed / TWEEN_DURATION_MS, 0), 1);
@@ -282,6 +386,8 @@ export function buildRoom(scene, { camera = null, canvas = null, onDrink = () =>
       canvas?.removeEventListener('pointerdown', onDrinkPointerDown);
       canvas?.removeEventListener('pointerup', onDrinkPointerUp);
       canvas?.removeEventListener('pointercancel', onDrinkPointerCancel);
+      dustGeometry.dispose();
+      dustMaterial.dispose();
     },
   };
 }

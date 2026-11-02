@@ -16,6 +16,7 @@ export class ViewerReceiver {
     this.recoveryTimer = null;
     this.hasTrack = false;
     this._liveFrameToken = 0;
+    this._offerGeneration = 0;
     this.tapOverlayEl = null;
     this.onRemoteVideoChange = onRemoteVideoChange || (() => {});
     this.getVolume = getVolume || (() => 0.8);
@@ -231,6 +232,7 @@ export class ViewerReceiver {
   }
 
   async handleOffer(from, sdp) {
+    const offerGeneration = ++this._offerGeneration;
     if (this.pc) {
       try {
         this.pc.close();
@@ -242,6 +244,7 @@ export class ViewerReceiver {
     this.pendingIce = [];
 
     const { iceServers } = await getIceConfig();
+    if (offerGeneration !== this._offerGeneration || !store.streaming.active) return;
     const pc = new RTCPeerConnection({ iceServers });
     this.pc = pc;
 
@@ -273,6 +276,7 @@ export class ViewerReceiver {
       this.clearWatchdog();
 
       const remoteStream = e.streams?.[0] || new MediaStream([e.track]);
+      if (this.pc !== pc) return;
       if (this._video.srcObject !== remoteStream) {
         this._video.srcObject = remoteStream;
       }
@@ -281,6 +285,12 @@ export class ViewerReceiver {
         this._connectSpatialAudio().catch(() => {});
       }
       if (e.track.kind === 'video') {
+        e.track.addEventListener('ended', () => {
+          if (this.pc !== pc || !store.streaming.active) return;
+          this.hasTrack = false;
+          store.setStatus(STATUS_TEXT.RECONNECTING);
+          this.scheduleResync(500);
+        }, { once: true });
         this._awaitFirstFrameAndSetLive();
       }
 
@@ -297,6 +307,10 @@ export class ViewerReceiver {
     };
 
     await pc.setRemoteDescription({ type: 'offer', sdp });
+    if (offerGeneration !== this._offerGeneration || this.pc !== pc) {
+      pc.close();
+      return;
+    }
 
     const queued = this.pendingIce;
     this.pendingIce = [];
@@ -313,6 +327,11 @@ export class ViewerReceiver {
     const answer = await pc.createAnswer();
     answer.sdp = enhanceOpusSdp(answer.sdp);
     await pc.setLocalDescription(answer);
+
+    if (offerGeneration !== this._offerGeneration || this.pc !== pc) {
+      pc.close();
+      return;
+    }
 
     net.emit('rtc:answer', {
       to: from,
@@ -338,6 +357,7 @@ export class ViewerReceiver {
 
   reset() {
     this._liveFrameToken += 1;
+    this._offerGeneration += 1;
     this.clearWatchdog();
     if (this.recoveryTimer) {
       clearTimeout(this.recoveryTimer);
