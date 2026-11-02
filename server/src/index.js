@@ -342,6 +342,7 @@ export function createServer() {
   // will time out after the REST room-creation request succeeds.
   const ioOptions = {
     path: process.env.VERCEL ? '/api/realtime' : '/realtime',
+    addTrailingSlash: false,
     ...(CONFIG.NODE_ENV !== 'production'
       ? {
           cors: {

@@ -13,6 +13,7 @@ export const net = {
 
     socket = io({
       path: import.meta.env.PROD ? '/api/realtime' : '/realtime',
+      addTrailingSlash: false,
       transports: ['websocket'],
       reconnection: true,
       reconnectionDelay: 1000,
