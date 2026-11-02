@@ -341,7 +341,7 @@ export function createServer() {
   // transport path must still match the public /api route or every room join
   // will time out after the REST room-creation request succeeds.
   const ioOptions = {
-    path: process.env.VERCEL ? '/api/socket.io' : '/socket.io',
+    path: process.env.VERCEL ? '/api/realtime' : '/realtime',
     ...(CONFIG.NODE_ENV !== 'production'
       ? {
           cors: {

@@ -12,7 +12,7 @@ export const net = {
     }
 
     socket = io({
-      path: import.meta.env.PROD ? '/api/socket.io' : '/socket.io',
+      path: import.meta.env.PROD ? '/api/realtime' : '/realtime',
       transports: ['websocket'],
       reconnection: true,
       reconnectionDelay: 1000,
