@@ -1,4 +1,4 @@
-export const ROOM_PATH_RE = /^\/r\/([a-z2-9]{8})$/;
+export const ROOM_PATH_RE = /^\/r\/([a-z2-9]{8})\/?$/;
 const ROOM_CODE_RE = /^[a-z2-9]{8}$/;
 
 export function parseRoomInput(raw) {

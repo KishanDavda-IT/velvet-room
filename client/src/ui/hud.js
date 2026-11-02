@@ -35,7 +35,9 @@ export function renderHud({
   logoEl.className = 'glass hud-logo hud-interactive';
   logoEl.textContent = 'Velvet Room';
 
-  const inviteUrl = `${window.location.origin}/r/${store.roomId}?join=1`;
+  // Keep shared links canonical. Some chat clients rewrite query strings or
+  // append a trailing slash while previewing links; the room code is enough.
+  const inviteUrl = new URL(`/r/${encodeURIComponent(store.roomId)}`, window.location.origin).href;
   const inviteBtn = document.createElement('button');
   inviteBtn.type = 'button';
   inviteBtn.className = 'glass hud-invite-btn hud-interactive';

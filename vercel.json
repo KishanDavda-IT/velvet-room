@@ -8,6 +8,10 @@
   },
   "rewrites": [
     {
+      "source": "/r/:roomId/:rest*",
+      "destination": "/index.html"
+    },
+    {
       "source": "/r/:roomId",
       "destination": "/index.html"
     }
