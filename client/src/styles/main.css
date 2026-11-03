@@ -21,6 +21,7 @@
 html, body {
   margin: 0;
   height: 100%;
+  min-height: 100%;
   background: var(--bg);
   color: var(--text);
   font: 400 15px/1.5 var(--font-body);
@@ -32,6 +33,7 @@ html, body {
   position: relative;
   width: 100vw;
   height: 100vh;
+  height: 100dvh;
   overflow: hidden;
 }
 
@@ -1178,6 +1180,7 @@ select:focus-visible {
   }
 
   .screen-overlay {
+    min-height: 100dvh;
     align-items: stretch;
     padding: max(16px, env(safe-area-inset-top)) 12px max(18px, env(safe-area-inset-bottom));
   }
@@ -1208,6 +1211,25 @@ select:focus-visible {
 
   .landing-card {
     padding: 18px;
+  }
+
+  .landing-card .btn-gold,
+  .landing-card .btn-ghost,
+  .gate-form .btn-gold {
+    width: 100%;
+    min-height: 48px;
+  }
+
+  /* Keep iOS Safari from zooming the page when a join field receives focus. */
+  .text-input,
+  .chat-input {
+    font-size: 16px;
+  }
+
+  .gate-card {
+    align-self: center;
+    max-width: 430px;
+    padding: 28px 20px;
   }
 
   .landing-footer {

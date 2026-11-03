@@ -14,7 +14,12 @@ export const net = {
     socket = io({
       path: import.meta.env.PROD ? '/api/realtime' : '/realtime',
       addTrailingSlash: false,
-      transports: ['websocket'],
+      // Start with long-polling and upgrade when WebSocket is available. Some
+      // mobile browsers, carrier networks, and captive portals block a direct
+      // WebSocket connection even though normal HTTPS requests work.
+      transports: ['polling', 'websocket'],
+      upgrade: true,
+      timeout: 15000,
       reconnection: true,
       reconnectionDelay: 1000,
       reconnectionDelayMax: 5000,

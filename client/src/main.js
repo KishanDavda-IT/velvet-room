@@ -759,6 +759,7 @@ async function handleRoute(route) {
     cameraRig.setOrbitMode(true);
 
     let roomInfo;
+    let roomLookupFailed = false;
     try {
       roomInfo = await getRoomInfo(roomId);
       if (!roomInfo.exists) {
@@ -772,10 +773,14 @@ async function handleRoute(route) {
         }
       }
     } catch {
-      roomInfo = { exists: false };
+      // A room lookup can fail on a mobile network while the realtime join
+      // endpoint is still reachable. Let the user try the join instead of
+      // turning a transient network error into a misleading 404 screen.
+      roomLookupFailed = true;
+      roomInfo = { exists: true, unavailable: true, count: 0, max: 8 };
     }
 
-    if (!roomInfo.exists) {
+    if (!roomInfo.exists && !roomLookupFailed) {
       activeOverlay = renderStatusScreen({
         container: appEl,
         title: 'Room not found',
@@ -813,7 +818,7 @@ async function handleRoute(route) {
       return;
     }
 
-    if (roomInfo.count >= roomInfo.max && !savedHostKey) {
+    if (roomInfo.count >= roomInfo.max && !savedHostKey && !roomInfo.unavailable) {
       activeOverlay = renderStatusScreen({
         container: appEl,
         title: 'This room is full.',

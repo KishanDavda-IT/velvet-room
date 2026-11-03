@@ -39,7 +39,7 @@ export function renderLanding({ container, onEnterRoomAsHost, onNavigateToRoom }
             id="landing-name-input"
             placeholder="Your name"
             maxlength="20"
-             autocomplete="off"
+            autocomplete="name"
           />
           <button type="button" class="btn-gold" id="landing-create-btn">Create a room</button>
           <div class="inline-error" id="landing-create-error" aria-live="polite"></div>
@@ -52,9 +52,20 @@ export function renderLanding({ container, onEnterRoomAsHost, onNavigateToRoom }
           <input
             type="text"
             class="text-input"
+            id="landing-join-name-input"
+            placeholder="Your name"
+            maxlength="20"
+            autocomplete="name"
+          />
+          <input
+            type="text"
+            class="text-input"
             id="landing-join-input"
             placeholder="Paste a room link or code"
             autocomplete="off"
+            autocapitalize="none"
+            spellcheck="false"
+            enterkeyhint="go"
           />
           <button type="button" class="btn-ghost" id="landing-join-btn">Join</button>
           <div class="inline-error" id="landing-join-error" aria-live="polite"></div>
@@ -72,10 +83,12 @@ export function renderLanding({ container, onEnterRoomAsHost, onNavigateToRoom }
   const createError = overlay.querySelector('#landing-create-error');
 
   const joinInput = overlay.querySelector('#landing-join-input');
+  const joinNameInput = overlay.querySelector('#landing-join-name-input');
   const joinBtn = overlay.querySelector('#landing-join-btn');
   const joinError = overlay.querySelector('#landing-join-error');
 
   nameInput.value = defaultName;
+  joinNameInput.value = defaultName;
 
   async function handleCreate() {
     createError.textContent = '';
@@ -114,7 +127,7 @@ export function renderLanding({ container, onEnterRoomAsHost, onNavigateToRoom }
       return;
     }
 
-    const name = nameInput.value.trim();
+    const name = joinNameInput.value.trim();
     if (name) {
       try {
         localStorage.setItem('velvet:name', name);
@@ -136,6 +149,12 @@ export function renderLanding({ container, onEnterRoomAsHost, onNavigateToRoom }
 
   joinBtn.addEventListener('click', handleJoin);
   joinInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleJoin();
+    }
+  });
+  joinNameInput.addEventListener('keydown', (e) => {
     if (e.key === 'Enter') {
       e.preventDefault();
       handleJoin();
