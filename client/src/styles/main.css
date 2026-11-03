@@ -1174,6 +1174,10 @@ select:focus-visible {
 }
 
 @media (max-width: 767px) {
+  :root {
+    --phone-gutter: max(12px, env(safe-area-inset-left));
+  }
+
   html,
   body {
     font-size: 14px;
@@ -1238,8 +1242,11 @@ select:focus-visible {
 
   .hud-topbar {
     top: max(8px, env(safe-area-inset-top));
-    left: 8px;
-    right: 8px;
+    left: var(--phone-gutter);
+    right: var(--phone-gutter);
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 6px;
   }
 
   .hud-logo {
@@ -1252,14 +1259,33 @@ select:focus-visible {
     padding: 0 12px;
   }
 
+  .hud-topbar > .pill {
+    position: fixed;
+    top: calc(max(8px, env(safe-area-inset-top)) + 43px);
+    right: var(--phone-gutter);
+    max-width: 46vw;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 11px;
+    padding: 5px 9px;
+  }
+
   .hud-status-wrap {
-    top: 58px;
+    top: calc(max(8px, env(safe-area-inset-top)) + 46px);
+    left: var(--phone-gutter);
+    transform: none;
+  }
+
+  .hud-status-wrap .pill {
+    font-size: 11px;
+    padding: 5px 9px;
   }
 
   .hud-mobile-controls {
     position: fixed;
-    left: max(14px, env(safe-area-inset-left));
-    bottom: calc(82px + env(safe-area-inset-bottom));
+    left: var(--phone-gutter);
+    bottom: max(16px, env(safe-area-inset-bottom));
     z-index: 23;
     display: block;
     width: 116px;
@@ -1301,24 +1327,24 @@ select:focus-visible {
   }
 
   .hud-movement-hint {
-    left: 132px;
+    left: var(--phone-gutter);
     top: auto;
-    bottom: calc(96px + env(safe-area-inset-bottom));
-    max-width: calc(100vw - 148px);
+    bottom: calc(142px + env(safe-area-inset-bottom));
+    max-width: 132px;
     padding: 5px 8px;
     font-size: 9px;
   }
 
   .hud-visibility-toggle {
-    top: 106px;
-    left: 8px;
+    top: calc(max(8px, env(safe-area-inset-top)) + 94px);
+    left: var(--phone-gutter);
     min-height: 34px;
   }
   .hud-quick-controls {
-    top: 106px;
-    left: 96px;
+    top: calc(max(8px, env(safe-area-inset-top)) + 94px);
+    left: 104px;
     gap: 4px;
-    max-width: calc(100vw - 104px);
+    max-width: calc(100vw - 116px - var(--phone-gutter));
     flex-wrap: nowrap;
     overflow-x: auto;
     overflow-y: hidden;
@@ -1330,35 +1356,48 @@ select:focus-visible {
     font-size: 11px;
   }
   .hud-movement-hint {
-    left: 8px;
-    top: 224px;
+    left: var(--phone-gutter);
+    top: calc(max(8px, env(safe-area-inset-top)) + 136px);
     bottom: auto;
     font-size: 10px;
   }
   .hud-chat {
     top: auto;
-    left: 8px;
-    right: 8px;
-    bottom: max(8px, env(safe-area-inset-bottom));
-    width: auto;
-    height: 40vh;
+    left: auto;
+    right: var(--phone-gutter);
+    bottom: max(12px, env(safe-area-inset-bottom));
+    width: min(360px, calc(100vw - 156px));
+    height: min(42dvh, 380px);
+    min-width: 184px;
+    max-height: calc(100dvh - 190px - env(safe-area-inset-top));
+    z-index: 25;
   }
   .hud-chat.collapsed {
-    height: 46px;
+    height: 48px;
+    min-width: 160px;
+    width: min(220px, calc(100vw - 156px));
   }
   .hud-volume {
-    right: 16px;
-    bottom: calc(64px + env(safe-area-inset-bottom));
+    right: var(--phone-gutter);
+    bottom: calc(70px + env(safe-area-inset-bottom));
+    padding: 7px 9px;
   }
   .hud-reactions {
-    bottom: calc(64px + env(safe-area-inset-bottom));
-    max-width: calc(100vw - 154px);
+    left: var(--phone-gutter);
+    bottom: calc(142px + env(safe-area-inset-bottom));
+    max-width: min(210px, calc(100vw - 24px));
     overflow-x: auto;
   }
   .hud-host-controls {
-    bottom: calc(120px + env(safe-area-inset-bottom));
-    width: calc(100vw - 24px);
+    left: var(--phone-gutter);
+    right: var(--phone-gutter);
+    bottom: calc(72px + env(safe-area-inset-bottom));
+    width: auto;
+    max-width: none;
     padding: 8px;
+    transform: none;
+    max-height: min(34dvh, 240px);
+    overflow-y: auto;
   }
 
   .host-row-1 {
@@ -1370,6 +1409,13 @@ select:focus-visible {
     min-width: 0;
     padding: 0 9px;
     font-size: 12px;
+  }
+
+  body:not(.chat-is-collapsed) .hud-mobile-controls,
+  body:not(.chat-is-collapsed) .hud-reactions,
+  body:not(.chat-is-collapsed) .hud-host-controls {
+    visibility: hidden;
+    pointer-events: none;
   }
   .movie-picker-backdrop {
     align-items: flex-end;
